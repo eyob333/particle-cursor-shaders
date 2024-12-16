@@ -80,8 +80,8 @@ displacement.canvas.width = 128
 displacement.canvas.height = 128
 
 displacement.canvas.style.position='fixed'
-displacement.canvas.style.width= '512px'
-displacement.canvas.style.height= '512px'
+displacement.canvas.style.width= '256px'
+displacement.canvas.style.height= '256px'
 displacement.canvas.style.top= 0
 displacement.canvas.style.left= 0
 displacement.canvas.style.zIndex= 10
@@ -89,10 +89,28 @@ displacement.canvas.style.zIndex= 10
 document.body.append(displacement.canvas)
 
 //context
-
 displacement.context = displacement.canvas.getContext("2d")
-displacement.context.fillStyle = 'red'
+// displacement.context.fillStyle = 'red'
 displacement.context.fillRect(0, 0, displacement.canvas.width, displacement.canvas.height)
+
+//imgae
+displacement.glowImge = new Image()
+displacement.glowImge.src = './glow.png'
+
+// interactive plance
+
+displacement.interactivePlane =  new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshBasicMaterial({ color: 'red'})
+)
+scene.add(displacement.interactivePlane)
+
+displacement.rayCaster = new THREE.Raycaster()
+displacement.screenCursor = new THREE.Vector2(9999, 9999)
+window.addEventListener("pointermove", (event) => {
+    displacement.screenCursor.x = (event.clientX / sizes.width) * 2 - 1,
+    displacement.screenCursor.y = -(event.clientY / sizes.height) *2 + 1
+})
 
 
 
@@ -120,6 +138,11 @@ const tick = () =>
 {
     // Update controls
     controls.update()
+
+    // update rayCaster
+
+    displacement.rayCaster.setFromCamera(displacement.screenCursor, camera)
+
 
     // Render
     renderer.render(scene, camera)
