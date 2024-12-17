@@ -101,7 +101,7 @@ displacement.glowImge.src = './glow.png'
 
 displacement.interactivePlane =  new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10),
-    new THREE.MeshBasicMaterial({ color: 'red',}) //side: THREE.DoubleSide
+    new THREE.MeshBasicMaterial({ color: 'red',side: THREE.DoubleSide}) 
 )
 displacement.interactivePlane.visible = false
 scene.add(displacement.interactivePlane)
@@ -111,6 +111,8 @@ displacement.rayCaster = new THREE.Raycaster()
 // coordinate
 displacement.screenCursor = new THREE.Vector2(9999, 9999)
 displacement.canvasCursor = new THREE.Vector2(9999, 9999)
+displacement.canvasCursorPrevious = new THREE.Vector2(9999, 9999)
+
 
 window.addEventListener("pointermove", (event) => {
     displacement.screenCursor.x = (event.clientX / sizes.width) * 2 - 1,
@@ -125,6 +127,8 @@ displacement.texture = new THREE.CanvasTexture( displacement.canvas)
  * Particles
  */
 const particlesGeometry = new THREE.PlaneGeometry(10, 10, 128, 128)
+particlesGeometry.setIndex(null)
+particlesGeometry.deleteAttribute('normal')
 
 // displacement intensity array
 
@@ -147,7 +151,8 @@ const particlesMaterial = new THREE.ShaderMaterial({
         uResolution: new THREE.Uniform(new THREE.Vector2(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)),
         uImgTexture: new THREE.Uniform(imgTexture),
         uDisplacementTexture: new THREE.Uniform(displacement.texture)
-    }
+    },
+    blending: THREE.AdditiveBlending
 })
 const particles = new THREE.Points(particlesGeometry, particlesMaterial)
 scene.add(particles)
@@ -161,7 +166,6 @@ const tick = () =>
     controls.update()
 
     // update rayCaster
-
     displacement.rayCaster.setFromCamera(displacement.screenCursor, camera)
     const intersections = displacement.rayCaster.intersectObject(displacement.interactivePlane)
     if (intersections.length){
@@ -171,12 +175,19 @@ const tick = () =>
     }
 
     // displacement 
+    // fade out
+
+    // speed alpha   
+    const cursorDistance = displacement.canvasCursorPrevious.distanceTo(displacement.canvasCursor)
+    displacement.canvasCursorPrevious.copy(displacement.canvasCursor)
+    const alpha = Math.min(cursorDistance * 0.1, 1)
+
     displacement.context.globalCompositeOperation = 'source-over'
     displacement.context.globalAlpha = .02
     displacement.context.fillRect( 0, 0, displacement.canvas.width, displacement.canvas.height)
     displacement.context.globalCompositeOperation = 'lighten'
     const glowSize = displacement.canvas.width * .25
-    displacement.context.globalAlpha = 1
+    displacement.context.globalAlpha = alpha
     displacement.context.drawImage(
         displacement.glowImge,
         displacement.canvasCursor.x - glowSize * .5 ,
