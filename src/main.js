@@ -101,17 +101,21 @@ displacement.glowImge.src = './glow.png'
 
 displacement.interactivePlane =  new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10),
-    new THREE.MeshBasicMaterial({ color: 'red'})
+    new THREE.MeshBasicMaterial({ color: 'red',}) //side: THREE.DoubleSide
 )
+displacement.interactivePlane.visible = false
 scene.add(displacement.interactivePlane)
 
 displacement.rayCaster = new THREE.Raycaster()
+
+// coordinate
 displacement.screenCursor = new THREE.Vector2(9999, 9999)
+displacement.canvasCursor = new THREE.Vector2(9999, 9999)
+
 window.addEventListener("pointermove", (event) => {
     displacement.screenCursor.x = (event.clientX / sizes.width) * 2 - 1,
     displacement.screenCursor.y = -(event.clientY / sizes.height) *2 + 1
 })
-
 
 
 /**
@@ -142,7 +146,27 @@ const tick = () =>
     // update rayCaster
 
     displacement.rayCaster.setFromCamera(displacement.screenCursor, camera)
+    const intersections = displacement.rayCaster.intersectObject(displacement.interactivePlane)
+    if (intersections.length){
+        const uv = intersections[0].uv 
+        displacement.canvasCursor.x = uv.x * displacement.canvas.width
+        displacement.canvasCursor.y = ( 1 - uv.y) * displacement.canvas.height
+    }
 
+    // displacement 
+    displacement.context.globalCompositeOperation = 'source-over'
+    displacement.context.globalAlpha = .02
+    displacement.context.fillRect( 0, 0, displacement.canvas.width, displacement.canvas.height)
+    displacement.context.globalCompositeOperation = 'lighten'
+    const glowSize = displacement.canvas.width * .25
+    displacement.context.globalAlpha = 1
+    displacement.context.drawImage(
+        displacement.glowImge,
+        displacement.canvasCursor.x - glowSize * .5 ,
+        displacement.canvasCursor.y - glowSize * .5,
+        glowSize,
+        glowSize,
+    )
 
     // Render
     renderer.render(scene, camera)
