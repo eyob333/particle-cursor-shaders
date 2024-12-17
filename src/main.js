@@ -117,11 +117,27 @@ window.addEventListener("pointermove", (event) => {
     displacement.screenCursor.y = -(event.clientY / sizes.height) *2 + 1
 })
 
+// texture
+displacement.texture = new THREE.CanvasTexture( displacement.canvas)
+
 
 /**
  * Particles
  */
 const particlesGeometry = new THREE.PlaneGeometry(10, 10, 128, 128)
+
+// displacement intensity array
+
+const intensitiesArray = new Float32Array(particlesGeometry.attributes.position.array)
+const angleArray = new Float32Array(particlesGeometry.attributes.position.array)
+
+for (let i = 0; i <= particlesGeometry.attributes.position.array.length; i++){
+    intensitiesArray[i] = Math.random()
+    angleArray[i] = Math.random() * Math.PI * 2
+}
+
+particlesGeometry.setAttribute('aIntensity',new THREE.BufferAttribute(intensitiesArray, 1))
+particlesGeometry.setAttribute('aAngle', new THREE.BufferAttribute(angleArray, 1))
 
 const particlesMaterial = new THREE.ShaderMaterial({
     vertexShader: particlesVertexShader,
@@ -129,7 +145,8 @@ const particlesMaterial = new THREE.ShaderMaterial({
     uniforms:
     {
         uResolution: new THREE.Uniform(new THREE.Vector2(sizes.width * sizes.pixelRatio, sizes.height * sizes.pixelRatio)),
-        uImgTexture: new THREE.Uniform(imgTexture)
+        uImgTexture: new THREE.Uniform(imgTexture),
+        uDisplacementTexture: new THREE.Uniform(displacement.texture)
     }
 })
 const particles = new THREE.Points(particlesGeometry, particlesMaterial)
@@ -167,6 +184,9 @@ const tick = () =>
         glowSize,
         glowSize,
     )
+
+    // texture
+    displacement.texture.needsUpdate = true
 
     // Render
     renderer.render(scene, camera)
